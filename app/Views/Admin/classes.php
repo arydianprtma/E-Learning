@@ -1,0 +1,436 @@
+<?php require_once '../app/Views/Layouts/header.php'; ?>
+
+<div class="flex h-screen bg-gray-100 font-sans">
+    <!-- Sidebar -->
+    <?php require_once '../app/Views/Layouts/sidebar.php'; ?>
+
+    <!-- Content -->
+    <div class="flex-1 flex flex-col overflow-hidden md:ml-64 transition-all duration-300">
+        <?php require_once '../app/Views/Layouts/topbar.php'; ?>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
+            <div class="container mx-auto px-6 py-8">
+                
+                <!-- Info Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Total Classes -->
+                    <div class="bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-xl shadow-lg p-6 text-white transform hover:scale-[1.02] transition-transform duration-300">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-indigo-100 text-sm font-medium mb-1">Total Kelas</p>
+                                <h2 class="text-3xl font-bold"><?= count($data['classes']); ?></h2>
+                                <p class="text-indigo-100 mt-2 text-xs">
+                                    Kelas Terdaftar
+                                </p>
+                            </div>
+                            <div class="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <i class="fas fa-chalkboard text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Academic Year -->
+                    <?php 
+                    $activeYear = null;
+                    foreach($data['years'] as $y) {
+                        if($y['is_active']) {
+                            $activeYear = $y;
+                            break;
+                        }
+                    }
+                    ?>
+                    <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500 transform hover:scale-[1.02] transition-transform duration-300">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium mb-1">Tahun Akademik Aktif</p>
+                                <h2 class="text-xl font-bold text-gray-800">
+                                    <?= $activeYear ? $activeYear['name'] : 'Belum diset'; ?>
+                                </h2>
+                                <p class="text-blue-600 mt-2 text-xs font-semibold">
+                                    Semester <?= $activeYear ? ucfirst($activeYear['semester']) : '-'; ?>
+                                </p>
+                            </div>
+                            <div class="p-3 bg-blue-50 rounded-lg">
+                                <i class="fas fa-calendar-check text-2xl text-blue-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                     <!-- Levels Summary -->
+                     <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-emerald-500 transform hover:scale-[1.02] transition-transform duration-300">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium mb-1">Tingkat Kelas</p>
+                                <div class="flex gap-2 mt-2">
+                                    <span class="px-2 py-1 bg-gray-100 rounded text-xs font-semibold text-gray-600">X: <?= count(array_filter($data['classes'], function($c){ return $c['level'] == 'X'; })); ?></span>
+                                    <span class="px-2 py-1 bg-gray-100 rounded text-xs font-semibold text-gray-600">XI: <?= count(array_filter($data['classes'], function($c){ return $c['level'] == 'XI'; })); ?></span>
+                                    <span class="px-2 py-1 bg-gray-100 rounded text-xs font-semibold text-gray-600">XII: <?= count(array_filter($data['classes'], function($c){ return $c['level'] == 'XII'; })); ?></span>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-emerald-50 rounded-lg">
+                                <i class="fas fa-layer-group text-2xl text-emerald-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search & Actions -->
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <div class="flex-1 w-full md:w-auto">
+                        <form action="<?= BASEURL; ?>/admin/classes" method="GET" class="relative">
+                            <input type="text" name="keyword" value="<?= isset($data['pagination']['keyword']) ? $data['pagination']['keyword'] : ''; ?>" placeholder="Cari kelas, tingkat, atau jurusan..." class="w-full md:w-64 pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                        </form>
+                    </div>
+                    <button onclick="openModal('addModal')" class="bg-primary text-white px-5 py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Tambah Kelas</span>
+                    </button>
+                </div>
+
+                <!-- Table Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-3 bg-blue-50 border-l-4 border-blue-400">
+                        <p class="text-xs font-semibold text-blue-700">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <span class="font-bold">Informasi:</span> Aksi akan muncul ketika mouse/kursor diarahkan ke setiap baris data.
+                        </p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Kelas</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kelas</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Jurusan</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Jumlah Siswa</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tahun Akademik</th>
+                                    <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <?php foreach($data['classes'] as $class): ?>
+                                <tr class="hover:bg-gray-50 transition-colors duration-150 group">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-500">
+                                                <i class="fas fa-users"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900"><?= $class['name']; ?></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            <?= $class['level']; ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                            <?= $class['major']; ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <span class="px-2.5 py-0.5 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                                            <i class="fas fa-user-graduate mr-1.5"></i> 
+                                            <span><?= $class['student_count']; ?> Siswa</span>
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div class="flex items-center gap-2">
+                                            <i class="far fa-calendar-alt text-gray-400"></i>
+                                            <?= $class['academic_year_name']; ?> 
+                                            <span class="text-xs text-gray-400">(<?= ucfirst($class['semester']); ?>)</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                            <a href="<?= BASEURL; ?>/admin/class_detail/<?= $class['id']; ?>" class="text-indigo-600 hover:text-indigo-900 transition-colors" title="Detail">
+                                                <i class="fas fa-eye text-lg"></i>
+                                            </a>
+                                            <button onclick="openEditModal(<?= htmlspecialchars(json_encode($class)); ?>)" class="text-amber-500 hover:text-amber-700 transition-colors" title="Edit">
+                                                <i class="fas fa-edit text-lg"></i>
+                                            </button>
+                                            <button onclick="deleteClass(<?= $class['id']; ?>)" class="text-red-500 hover:text-red-700 transition-colors" title="Hapus">
+                                                <i class="fas fa-trash-alt text-lg"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php if(empty($data['classes'])): ?>
+                        <div class="p-8 text-center text-gray-500">
+                            <div class="mb-3">
+                                <i class="fas fa-chalkboard text-4xl text-gray-300"></i>
+                            </div>
+                            <p>Belum ada data kelas.</p>
+                        </div>
+                    <?php else: ?>
+                        <!-- Pagination -->
+                        <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                            <div class="text-sm text-gray-500">
+                                Menampilkan <span class="font-medium"><?= ($data['pagination']['current_page'] - 1) * 10 + 1; ?></span> sampai <span class="font-medium"><?= min($data['pagination']['current_page'] * 10, $data['pagination']['total_rows']); ?></span> dari <span class="font-medium"><?= $data['pagination']['total_rows']; ?></span> data
+                            </div>
+                            <div class="flex gap-2">
+                                <?php if ($data['pagination']['current_page'] > 1): ?>
+                                    <a href="<?= BASEURL; ?>/admin/classes?page=<?= $data['pagination']['current_page'] - 1; ?>&keyword=<?= $data['pagination']['keyword']; ?>" class="px-3 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors">
+                                        <i class="fas fa-chevron-left mr-1"></i> Prev
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php for($i = 1; $i <= $data['pagination']['total_pages']; $i++): ?>
+                                    <?php if ($i == $data['pagination']['current_page']): ?>
+                                        <span class="px-3 py-1 rounded-md bg-indigo-600 border border-indigo-600 text-white text-sm font-medium">
+                                            <?= $i; ?>
+                                        </span>
+                                    <?php elseif ($i <= 3 || $i >= $data['pagination']['total_pages'] - 2 || abs($i - $data['pagination']['current_page']) <= 1): ?>
+                                        <a href="<?= BASEURL; ?>/admin/classes?page=<?= $i; ?>&keyword=<?= $data['pagination']['keyword']; ?>" class="px-3 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors">
+                                            <?= $i; ?>
+                                        </a>
+                                    <?php elseif ($i == 4 && $data['pagination']['current_page'] > 5): ?>
+                                        <span class="px-2 py-1 text-gray-400">...</span>
+                                    <?php elseif ($i == $data['pagination']['total_pages'] - 3 && $data['pagination']['current_page'] < $data['pagination']['total_pages'] - 4): ?>
+                                        <span class="px-2 py-1 text-gray-400">...</span>
+                                    <?php endif; ?>
+                                <?php endfor; ?>
+
+                                <?php if ($data['pagination']['current_page'] < $data['pagination']['total_pages']): ?>
+                                    <a href="<?= BASEURL; ?>/admin/classes?page=<?= $data['pagination']['current_page'] + 1; ?>&keyword=<?= $data['pagination']['keyword']; ?>" class="px-3 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors">
+                                        Next <i class="fas fa-chevron-right ml-1"></i>
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div id="addModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeModal('addModal')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <i class="fas fa-chalkboard text-blue-600"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Tambah Kelas Baru</h3>
+                        <div class="mt-2">
+                            <form id="addForm" action="<?= BASEURL; ?>/admin/classes_add" method="POST" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Kelas (e.g. X IPA 1)</label>
+                                    <input type="text" name="name" required class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 border p-2.5">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tingkat</label>
+                                        <select name="level" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 border p-2.5">
+                                            <option value="X">X</option>
+                                            <option value="XI">XI</option>
+                                            <option value="XII">XII</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Jurusan</label>
+                                        <select name="major" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 border p-2.5">
+                                            <option value="IPA">IPA</option>
+                                            <option value="IPS">IPS</option>
+                                            <option value="Bahasa">Bahasa</option>
+                                            <option value="Umum">Umum</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tahun Akademik</label>
+                                    <select name="academic_year_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 border p-2.5">
+                                        <?php foreach($data['years'] as $year): ?>
+                                            <option value="<?= $year['id']; ?>" <?= $year['is_active'] ? 'selected' : '' ?>>
+                                                <?= $year['name']; ?> (<?= ucfirst($year['semester']); ?>) <?= $year['is_active'] ? '- Aktif' : '' ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" onclick="submitForm('addForm')" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                    Simpan
+                </button>
+                <button type="button" onclick="closeModal('addModal')" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeModal('editModal')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <i class="fas fa-edit text-amber-600"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Edit Kelas</h3>
+                        <div class="mt-2">
+                            <form id="editForm" action="<?= BASEURL; ?>/admin/classes_update" method="POST" class="space-y-4">
+                                <input type="hidden" name="id" id="edit_id">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Kelas (e.g. X IPA 1)</label>
+                                    <input type="text" name="name" id="edit_name" required class="w-full rounded-lg border-gray-300 shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50 border p-2.5">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tingkat</label>
+                                        <select name="level" id="edit_level" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50 border p-2.5">
+                                            <option value="X">X</option>
+                                            <option value="XI">XI</option>
+                                            <option value="XII">XII</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Jurusan</label>
+                                        <select name="major" id="edit_major" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50 border p-2.5">
+                                            <option value="IPA">IPA</option>
+                                            <option value="IPS">IPS</option>
+                                            <option value="Bahasa">Bahasa</option>
+                                            <option value="Umum">Umum</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tahun Akademik</label>
+                                    <select name="academic_year_id" id="edit_academic_year_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50 border p-2.5">
+                                        <?php foreach($data['years'] as $year): ?>
+                                            <option value="<?= $year['id']; ?>">
+                                                <?= $year['name']; ?> (<?= ucfirst($year['semester']); ?>)
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" onclick="submitForm('editForm')" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                    Update
+                </button>
+                <button type="button" onclick="closeModal('editModal')" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+function openEditModal(data) {
+    document.getElementById('edit_id').value = data.id;
+    document.getElementById('edit_name').value = data.name;
+    document.getElementById('edit_level').value = data.level;
+    document.getElementById('edit_major').value = data.major;
+    document.getElementById('edit_academic_year_id').value = data.academic_year_id;
+    openModal('editModal');
+}
+
+function submitForm(formId) {
+    document.getElementById(formId).dispatchEvent(new Event('submit'));
+}
+
+function deleteClass(id) {
+    Swal.fire({
+        title: 'Apakah Anda yakin?',
+        text: "Data kelas akan dihapus permanen! Semua data siswa dalam kelas ini mungkin akan terdampak.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = '<?= BASEURL; ?>/admin/classes_delete/' + id;
+        }
+    });
+}
+
+// Attach event listeners to forms
+['addForm', 'editForm'].forEach(formId => {
+    document.getElementById(formId).addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const submitBtn = this.closest('.inline-block').querySelector('button[onclick^="submitForm"]');
+        const originalText = submitBtn.innerText;
+        
+        submitBtn.innerText = 'Memproses...';
+        submitBtn.disabled = true;
+
+        try {
+            const response = await fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const contentType = response.headers.get('content-type');
+            
+            if (contentType && contentType.includes('application/json')) {
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error.message || 'Terjadi kesalahan');
+                }
+            } 
+            
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                 window.location.reload();
+            }
+
+        } catch (err) {
+            console.error(err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: err.message || 'Terjadi kesalahan koneksi',
+                confirmButtonColor: '#ef4444'
+            });
+            submitBtn.innerText = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+});
+</script>
+
+<?php require_once '../app/Views/Layouts/footer.php'; ?>
